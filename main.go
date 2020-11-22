@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"image/color"
-	"image/png"
-	"log"
+	"image/gif"
 	"os"
 
 	"github.com/keftcha/floodfill/cell"
@@ -101,34 +99,70 @@ func main() {
 
 	f, _ := field.New(cells, cells[4][5])
 
-	// Create the image
-	img := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{f.Width, f.Height}})
-	// Put the black and white on the image
+	// Define our color palette
+	palette := []color.Color{
+		color.Transparent,
+		color.White,
+		color.Black,
+		color.RGBA{0x00, 0x00, 0xFF, 0xFF},
+	}
+
+	// Create the initial frame
+	img := image.NewPaletted(
+		image.Rectangle{
+			image.Point{0, 0},
+			image.Point{f.Width, f.Height},
+		},
+		palette,
+	)
+
+	// Put the black and white on the initial frame
 	for y := 0; y < f.Height; y++ {
 		for x := 0; x < f.Width; x++ {
-			c := color.White
+			colorIdx := uint8(1)
 			if f.Cells[y][x].Changed {
-				c = color.Black
+				colorIdx = 2
 			}
-			img.Set(x, y, c)
+			img.SetColorIndex(x, y, colorIdx)
 		}
 	}
+
+	// Slice of our gif frame (also add the initial one)
+	paletted := []*image.Paletted{img}
+	delays := []int{10}
 
 	// Loop while the files isn't filled
 	for idx := 0; !f.Filled; idx++ {
 		cls := f.Step()
 
+		// Create the new frame
+		// Create the initial frame
+		frm := image.NewPaletted(
+			image.Rectangle{
+				image.Point{0, 0},
+				image.Point{f.Width, f.Height},
+			},
+			palette,
+		)
+
 		for _, c := range cls {
-			img.Set(c.X, c.Y, color.RGBA{0x00, 0x00, 0xFF, 0xFF})
+			frm.SetColorIndex(c.X, c.Y, 3)
 		}
 
-		// Create the future image file
-		fle, err := os.Create(fmt.Sprintf("image-%d.png", idx))
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// Write the image in the file
-		png.Encode(fle, img)
+		// Add the frame to our list
+		paletted = append(paletted, frm)
+		delays = append(delays, 10)
 	}
+
+	// Create the gif
+	anim := gif.GIF{
+		Image:           paletted,
+		Delay:           delays,
+		BackgroundIndex: 0,
+	}
+
+	// Create the gif file
+	fle, _ := os.Create("floodfill.gif")
+	// Save the gif on disk
+	gif.EncodeAll(fle, &anim)
 }
