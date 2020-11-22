@@ -27,7 +27,7 @@ func TestDequeueEmptyQueueShouldPanic(t *testing.T) {
 
 func TestEnqueueACellShouldAddTheElementInTheQueue(t *testing.T) {
 	q := New()
-	q.Enqueue(cell.New(0, 0))
+	q.Enqueue(cell.New(0, 0, false))
 
 	if len(q) != 1 {
 		t.Error("The Cell isn't added to the Queue")
@@ -37,9 +37,9 @@ func TestEnqueueACellShouldAddTheElementInTheQueue(t *testing.T) {
 func TestEnqueueMultipleElementsShouldKeepThemInOrder(t *testing.T) {
 	q := New()
 
-	c0 := cell.New(0, 0)
-	c1 := cell.New(1, 1)
-	c2 := cell.New(2, 2)
+	c0 := cell.New(0, 0, false)
+	c1 := cell.New(1, 1, false)
+	c2 := cell.New(2, 2, false)
 
 	q.Enqueue(c0)
 	q.Enqueue(c1)
@@ -57,9 +57,9 @@ func TestEnqueueMultipleElementsShouldKeepThemInOrder(t *testing.T) {
 func TestDequeueACellShouldReturnTheRemovedCellAndLetOtherCellsInQueueInOrder(t *testing.T) {
 	q := New()
 
-	c0 := cell.New(0, 0)
-	c1 := cell.New(1, 1)
-	c2 := cell.New(2, 2)
+	c0 := cell.New(0, 0, false)
+	c1 := cell.New(1, 1, false)
+	c2 := cell.New(2, 2, false)
 
 	q.Enqueue(c0)
 	q.Enqueue(c1)
@@ -83,10 +83,10 @@ func TestDequeueACellShouldReturnTheRemovedCellAndLetOtherCellsInQueueInOrder(t 
 func TestDequeueMultipleCellsShouldReturnTheRemovedCellAndLetOtherCellsInQueueInOrder(t *testing.T) {
 	q := New()
 
-	c0 := cell.New(0, 0)
-	c1 := cell.New(1, 1)
-	c2 := cell.New(2, 2)
-	c3 := cell.New(3, 3)
+	c0 := cell.New(0, 0, false)
+	c1 := cell.New(1, 1, false)
+	c2 := cell.New(2, 2, false)
+	c3 := cell.New(3, 3, false)
 
 	q.Enqueue(c0)
 	q.Enqueue(c1)

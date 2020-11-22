@@ -27,7 +27,7 @@ func TestPopEmptyStackShouldPanic(t *testing.T) {
 
 func TestPushACellShouldAddTheElementOnTheStack(t *testing.T) {
 	s := New()
-	s.Push(cell.New(0, 0))
+	s.Push(cell.New(0, 0, false))
 
 	if len(s) != 1 {
 		t.Error("The Cell isn't added on the Stack")
@@ -37,9 +37,9 @@ func TestPushACellShouldAddTheElementOnTheStack(t *testing.T) {
 func TestPushMultipleElementsShouldKeepThemInOrder(t *testing.T) {
 	s := New()
 
-	c0 := cell.New(0, 0)
-	c1 := cell.New(1, 1)
-	c2 := cell.New(2, 2)
+	c0 := cell.New(0, 0, false)
+	c1 := cell.New(1, 1, false)
+	c2 := cell.New(2, 2, false)
 
 	s.Push(c0)
 	s.Push(c1)
@@ -57,9 +57,9 @@ func TestPushMultipleElementsShouldKeepThemInOrder(t *testing.T) {
 func TestPopACellShouldReturnTheRemovedCellAndLetOtherCellsInStackInOrder(t *testing.T) {
 	s := New()
 
-	c0 := cell.New(0, 0)
-	c1 := cell.New(1, 1)
-	c2 := cell.New(2, 2)
+	c0 := cell.New(0, 0, false)
+	c1 := cell.New(1, 1, false)
+	c2 := cell.New(2, 2, false)
 
 	s.Push(c0)
 	s.Push(c1)
@@ -83,10 +83,10 @@ func TestPopACellShouldReturnTheRemovedCellAndLetOtherCellsInStackInOrder(t *tes
 func TestPopMultipleCellsShouldReturnTheRemovedCellsAndLetOtherCellsInStackOrder(t *testing.T) {
 	s := New()
 
-	c0 := cell.New(0, 0)
-	c1 := cell.New(1, 1)
-	c2 := cell.New(2, 2)
-	c3 := cell.New(3, 3)
+	c0 := cell.New(0, 0, false)
+	c1 := cell.New(1, 1, false)
+	c2 := cell.New(2, 2, false)
+	c3 := cell.New(3, 3, false)
 
 	s.Push(c0)
 	s.Push(c1)
