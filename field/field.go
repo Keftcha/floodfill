@@ -1,6 +1,7 @@
 package field
 
 import (
+	"errors"
 	"github.com/keftcha/floodfill/cell"
 )
 
@@ -14,7 +15,11 @@ type Field struct {
 }
 
 // New return a Field
-func New(cells [][]cell.Cell, startCell cell.Cell) Field {
+func New(cells [][]cell.Cell, startCell cell.Cell) (Field, error) {
+	if cells[startCell.Y][startCell.X].Changed {
+		return Field{}, errors.New("The initial cell is already changed")
+	}
+
 	cells[startCell.Y][startCell.X].ChangeNextStep = true
 	return Field{
 		Width:    len(cells[0]),
@@ -22,7 +27,7 @@ func New(cells [][]cell.Cell, startCell cell.Cell) Field {
 		Cells:    cells,
 		toChange: []cell.Cell{cells[startCell.Y][startCell.X]},
 		Filled:   false,
-	}
+	}, nil
 }
 
 // Step change cells state and return changed one

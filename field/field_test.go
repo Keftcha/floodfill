@@ -108,7 +108,8 @@ func getField() Field {
 		},
 	}
 
-	return New(cells, cells[4][5])
+	f, _ := New(cells, cells[4][5])
+	return f
 }
 
 func TestCreateANewField(t *testing.T) {
@@ -659,5 +660,24 @@ func TestContinueSteppingWhenTheFieldIsFilled(t *testing.T) {
 
 	if !f.Filled {
 		t.Error("The field is indicated not filled")
+	}
+}
+
+func TestTheStartCellIsABorder(t *testing.T) {
+	field := [][]cell.Cell{
+		[]cell.Cell{
+			cell.New(0, 0, true),
+			cell.New(1, 0, false),
+		},
+		[]cell.Cell{
+			cell.New(0, 1, false),
+			cell.New(1, 1, false),
+		},
+	}
+
+	_, err := New(field, field[0][0])
+
+	if err.Error() != "The initial cell is already changed" {
+		t.Errorf("The error returned is wrong, expected: `The initial cell is already changed` got: `%s`", err)
 	}
 }
