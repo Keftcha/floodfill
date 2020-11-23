@@ -1,7 +1,6 @@
 package main
 
 import (
-	"image"
 	"image/color"
 	"image/gif"
 	"os"
@@ -99,67 +98,12 @@ func main() {
 
 	f, _ := field.New(cells, cells[4][5])
 
-	// Define our color palette
-	palette := []color.Color{
-		color.Transparent,
-		color.White,
-		color.Black,
-		color.RGBA{0x00, 0x00, 0xFF, 0xFF},
-	}
-
-	// Create the initial frame
-	img := image.NewPaletted(
-		image.Rectangle{
-			image.Point{0, 0},
-			image.Point{f.Width, f.Height},
-		},
-		palette,
+	// Generate the floodfill gif
+	anim := generateFloodfillGif(
+		f,
+		color.RGBA{0xFF, 0xFF, 0x00, 0x00}, // Yellow
+		5,
 	)
-
-	// Put the black and white on the initial frame
-	for y := 0; y < f.Height; y++ {
-		for x := 0; x < f.Width; x++ {
-			colorIdx := uint8(1)
-			if f.Cells[y][x].Changed {
-				colorIdx = 2
-			}
-			img.SetColorIndex(x, y, colorIdx)
-		}
-	}
-
-	// Slice of our gif frame (also add the initial one)
-	paletted := []*image.Paletted{img}
-	delays := []int{10}
-
-	// Loop while the files isn't filled
-	for idx := 0; !f.Filled; idx++ {
-		cls := f.Step()
-
-		// Create the new frame
-		// Create the initial frame
-		frm := image.NewPaletted(
-			image.Rectangle{
-				image.Point{0, 0},
-				image.Point{f.Width, f.Height},
-			},
-			palette,
-		)
-
-		for _, c := range cls {
-			frm.SetColorIndex(c.X, c.Y, 3)
-		}
-
-		// Add the frame to our list
-		paletted = append(paletted, frm)
-		delays = append(delays, 10)
-	}
-
-	// Create the gif
-	anim := gif.GIF{
-		Image:           paletted,
-		Delay:           delays,
-		BackgroundIndex: 0,
-	}
 
 	// Create the gif file
 	fle, _ := os.Create("floodfill.gif")
