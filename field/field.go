@@ -2,7 +2,7 @@ package field
 
 import (
 	"errors"
-	"github.com/keftcha/floodfill/cell"
+	"github.com/keftcha/floodfill/field/cell"
 )
 
 // Field of cell

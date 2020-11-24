@@ -1,4 +1,4 @@
-package main
+package field
 
 import (
 	"image/color"
@@ -6,20 +6,19 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/keftcha/floodfill/cell"
-	"github.com/keftcha/floodfill/field"
+	"github.com/keftcha/floodfill/field/cell"
 )
 
-func convertPNGToField(pngName string) (color.RGBA, field.Field, error) {
+func ConvertPNGToField(pngName string) (color.RGBA, Field, error) {
 	// Read the PNG file
 	fle, err := ioutil.ReadFile(pngName)
 	if err != nil {
-		return color.RGBA{}, field.Field{}, err
+		return color.RGBA{}, Field{}, err
 	}
 
 	img, err := png.Decode(strings.NewReader(string(fle)))
 	if err != nil {
-		return color.RGBA{}, field.Field{}, err
+		return color.RGBA{}, Field{}, err
 	}
 
 	cells := make([][]cell.Cell, img.Bounds().Max.Y)
@@ -50,6 +49,6 @@ func convertPNGToField(pngName string) (color.RGBA, field.Field, error) {
 		cells[lineIdx] = line
 	}
 
-	field, err := field.New(cells, cells[initCell.Y][initCell.X])
+	field, err := New(cells, cells[initCell.Y][initCell.X])
 	return initColor, field, err
 }

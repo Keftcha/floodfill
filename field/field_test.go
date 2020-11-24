@@ -3,7 +3,7 @@ package field
 import (
 	"testing"
 
-	"github.com/keftcha/floodfill/cell"
+	"github.com/keftcha/floodfill/field/cell"
 )
 
 func equalSlice(s0, s1 []cell.Cell) bool {
