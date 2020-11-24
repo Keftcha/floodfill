@@ -4,4 +4,4 @@ Generate floodfill gif
 
 ---
 
-Unlike my cousin, floods can color without overstepping.
+Unlike my cousin, this program can color without overstepping.
