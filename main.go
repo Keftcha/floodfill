@@ -3,10 +3,11 @@ package main
 import (
 	"flag"
 	"image/gif"
+	"image/png"
+	"io/ioutil"
 	"log"
 	"os"
-
-	"github.com/keftcha/floodfill/field"
+	"strings"
 )
 
 var src string
@@ -31,17 +32,21 @@ func init() {
 }
 
 func main() {
-
-	c, f, err := field.ConvertPNGToField(src)
+	// Read the PNG file
+	fle, err := ioutil.ReadFile(src)
+	if err != nil {
+		log.Fatal(err)
+	}
+	img, err := png.Decode(strings.NewReader(string(fle)))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Generate the floodfill gif
-	anim := generateFloodfillGif(f, c, delay)
+	anim := generateFloodfillGif(img, delay)
 
 	// Create the gif file
-	fle, _ := os.Create(out)
+	outFle, _ := os.Create(out)
 	// Save the gif on disk
-	gif.EncodeAll(fle, &anim)
+	gif.EncodeAll(outFle, &anim)
 }
