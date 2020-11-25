@@ -48,5 +48,5 @@ func main() {
 	// Create the gif file
 	outFle, _ := os.Create(out)
 	// Save the gif on disk
-	gif.EncodeAll(outFle, &anim)
+	gif.EncodeAll(outFle, anim)
 }

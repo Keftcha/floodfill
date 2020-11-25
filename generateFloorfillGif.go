@@ -15,9 +15,8 @@ func contain(colors color.Palette, c color.RGBA) (bool, uint8) {
 	return false, 0
 }
 
-func generateFloodfillGif(img image.Image, delay int) gif.GIF {
-	// Find image colors to make our color palette
-	palette := color.Palette{}
+func extractPalette(img image.Image) color.Palette {
+	palette := color.Palette{color.Transparent}
 	for y := 0; y < img.Bounds().Max.Y; y++ {
 		for x := 0; x < img.Bounds().Max.X; x++ {
 			// Find the pixel color
@@ -29,143 +28,125 @@ func generateFloodfillGif(img image.Image, delay int) gif.GIF {
 			}
 		}
 	}
+	return palette
+}
 
-	// The first and Second frame of the gif
-	first := image.NewPaletted(
-		image.Rectangle{
-			image.Point{0, 0},
-			image.Point{
-				img.Bounds().Max.X,
-				img.Bounds().Max.Y,
-			},
-		},
-		palette,
-	)
-	second := image.NewPaletted(
-		image.Rectangle{
-			image.Point{0, 0},
-			image.Point{
-				img.Bounds().Max.X,
-				img.Bounds().Max.Y,
-			},
-		},
-		palette,
-	)
-
-	// White index of the palette color (used for building the first frame)
-	_, whiteIdx := contain(palette, color.RGBA{255, 255, 255, 255})
-	// Slice of pixel position we have filled and need to proceed
-	toProceed := make([]image.Point, 0)
+func copyImageIntoPaletted(img image.Image, frame *image.Paletted) {
+	model := frame.ColorModel()
 	for y := 0; y < img.Bounds().Max.Y; y++ {
 		for x := 0; x < img.Bounds().Max.X; x++ {
-			// Find the pixel color
-			r, g, b, a := img.At(x, y).RGBA()
-			c := color.RGBA{uint8(r), uint8(g), uint8(b), uint8(a)}
+			idxColor := uint8(frame.Palette.Index(model.Convert(img.At(x, y))))
+			frame.SetColorIndex(x, y, idxColor)
+		}
+	}
+}
 
-			// Finde the idx of the color in our palette
-			_, idx := contain(palette, c)
-			// Check if the color is different of black and white
-			if (c != color.RGBA{255, 255, 255, 255} && c != color.RGBA{0, 0, 0, 255}) {
-				first.SetColorIndex(x, y, whiteIdx)
-				second.SetColorIndex(x, y, idx)
-				toProceed = append(toProceed, image.Point{x, y})
-			} else {
-				first.SetColorIndex(x, y, idx)
-				second.SetColorIndex(x, y, idx)
+func initCells(frame *image.Paletted) []image.Point {
+	whiteIdx := uint8(frame.Palette.Index(color.RGBA{255, 255, 255, 255}))
+	blackIdx := uint8(frame.Palette.Index(color.RGBA{0, 0, 0, 255}))
+	cells := make([]image.Point, 0)
+
+	for y := 0; y < frame.Bounds().Max.Y; y++ {
+		for x := 0; x < frame.Bounds().Max.X; x++ {
+			pixel := frame.ColorIndexAt(x, y)
+			if pixel != whiteIdx && pixel != blackIdx {
+				cells = append(cells, image.Pt(x, y))
 			}
 		}
 	}
 
-	// Slice of our gif frame
-	frames := []*image.Paletted{first, second}
-	// Delays of each frame of our gif
-	delays := []int{delay, delay}
+	return cells
+}
+
+func addFrame(g *gif.GIF, f *image.Paletted, d int) {
+	g.Image = append(g.Image, f)
+	g.Delay = append(g.Delay, d)
+}
+
+func generateFloodfillGif(img image.Image, delay int) *gif.GIF {
+	// Find image colors to make our color palette
+	palette := extractPalette(img)
+
+	// Initialize the first frame of the gif
+	frame := image.NewPaletted(img.Bounds(), palette)
+	copyImageIntoPaletted(img, frame)
+
+	// Initialize pixels we need to proceed at first step
+	pixels := initCells(frame)
+
+	// Initialize our output gif
+	out := &gif.GIF{
+		Image: make([]*image.Paletted, 0, 1),
+		Delay: make([]int, 0, 1),
+	}
+	addFrame(out, frame, delay)
 
 	// Floodfill loop
-	current := second
-	for len(toProceed) != 0 {
+	for len(pixels) != 0 {
 		// Create the next frame
-		next := image.NewPaletted(
-			image.Rectangle{
-				image.Point{0, 0},
-				image.Point{
-					img.Bounds().Max.X,
-					img.Bounds().Max.Y,
-				},
-			},
-			palette,
-		)
-		// Copy the content of the current frame in the next one
-		copy(next.Pix, current.Pix)
-
+		nextFrame := image.NewPaletted(frame.Bounds(), palette)
+		copy(nextFrame.Pix, frame.Pix)
 		// Slice of next pixel position we will need to proceed next step
-		toProceedNext := make([]image.Point, 0)
+		nextPixels := make([]image.Point, 0)
 
-		for _, pixCoor := range toProceed {
+		for _, pix := range pixels {
 			// Color idx in the palette of the pixel we proceed
-			r, g, b, a := next.At(pixCoor.X, pixCoor.Y).RGBA()
-			_, colorIdx := contain(palette, color.RGBA{uint8(r), uint8(g), uint8(b), uint8(a)})
+			colorIdx := uint8(nextFrame.Palette.Index(nextFrame.At(pix.X, pix.Y)))
 
 			// Pixel above
-			if 0 < pixCoor.Y {
-				above := next.At(pixCoor.X, pixCoor.Y-1)
+			if 0 < pix.Y {
+				above := nextFrame.At(pix.X, pix.Y-1)
 				// If the above pixel is white, we color it
 				if (above == color.RGBA{255, 255, 255, 255}) {
 					// Change the color
-					next.SetColorIndex(pixCoor.X, pixCoor.Y-1, colorIdx)
+					nextFrame.SetColorIndex(pix.X, pix.Y-1, colorIdx)
 					// Add to the proceed list for next step
-					toProceedNext = append(toProceedNext, image.Point{pixCoor.X, pixCoor.Y - 1})
+					nextPixels = append(nextPixels, image.Point{pix.X, pix.Y - 1})
 				}
 			}
 			// Pixel on right
-			if pixCoor.X < next.Bounds().Max.X-1 {
-				right := next.At(pixCoor.X+1, pixCoor.Y)
+			if pix.X < nextFrame.Bounds().Max.X-1 {
+				right := nextFrame.At(pix.X+1, pix.Y)
 				// If the right pixel is white, we color it
 				if (right == color.RGBA{255, 255, 255, 255}) {
 					// Change the color
-					next.SetColorIndex(pixCoor.X+1, pixCoor.Y, colorIdx)
+					nextFrame.SetColorIndex(pix.X+1, pix.Y, colorIdx)
 					// Add to the proceed list for next step
-					toProceedNext = append(toProceedNext, image.Point{pixCoor.X + 1, pixCoor.Y})
+					nextPixels = append(nextPixels, image.Point{pix.X + 1, pix.Y})
 				}
 
 			}
 			// Pixel bellow
-			if pixCoor.Y < next.Bounds().Max.Y-1 {
-				bellow := next.At(pixCoor.X, pixCoor.Y+1)
+			if pix.Y < nextFrame.Bounds().Max.Y-1 {
+				bellow := nextFrame.At(pix.X, pix.Y+1)
 				// If the pixel bellow is white, we colore it
 				if (bellow == color.RGBA{255, 255, 255, 255}) {
 					// Change the color
-					next.SetColorIndex(pixCoor.X, pixCoor.Y+1, colorIdx)
+					nextFrame.SetColorIndex(pix.X, pix.Y+1, colorIdx)
 					// Add to the proceed list for next step
-					toProceedNext = append(toProceedNext, image.Point{pixCoor.X, pixCoor.Y + 1})
+					nextPixels = append(nextPixels, image.Point{pix.X, pix.Y + 1})
 				}
 			}
 			// Pixel on left
-			if 0 < pixCoor.X {
-				left := next.At(pixCoor.X-1, pixCoor.Y)
+			if 0 < pix.X {
+				left := nextFrame.At(pix.X-1, pix.Y)
 				// If the pixel on left is white, we color it
 				if (left == color.RGBA{255, 255, 255, 255}) {
 					// Change the color
-					next.SetColorIndex(pixCoor.X-1, pixCoor.Y, colorIdx)
+					nextFrame.SetColorIndex(pix.X-1, pix.Y, colorIdx)
 					// Add to the proceed list for next step
-					toProceedNext = append(toProceedNext, image.Point{pixCoor.X - 1, pixCoor.Y})
+					nextPixels = append(nextPixels, image.Point{pix.X - 1, pix.Y})
 				}
 			}
 		}
 
-		// Add the new builded frame to our frame list
-		frames = append(frames, next)
-		// Add the delay for the frame
-		delays = append(delays, delay)
+		addFrame(out, frame, delay)
 
 		// Update the new proceed pixels
-		toProceed = toProceedNext
+		pixels = nextPixels
 		// Now the next frame is the current
-		current = next
+		frame = nextFrame
 	}
 
-	return gif.GIF{
-		Image: frames,
-		Delay: delays,
-	}
+	return out
 }
